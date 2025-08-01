@@ -6,7 +6,7 @@ class Measurement:
     # Parent class for any type of single measurement curve
     # All specific measurement classes e.g. spectrum inherit from this class
 
-    def __int__(self, filepath):
+    def __init__(self, filepath):
         self.filepath = filepath
 
         ## Info ##
@@ -14,8 +14,25 @@ class Measurement:
         # self.info =
 
         ## Data ##
-        # self.X =
-        # self.Y =
+        self.X = 5
+        self.Y = 6
+
+
+class Spectrum(Measurement):
+
+    def __init__(self, filepath):
+        super().__init__(filepath)
+        self.X += 1
+
+    def show(self):
+        print(self.X)
+
+
+testclass = Spectrum(1)
+testclass.show()
+
+
+
 
 
 
