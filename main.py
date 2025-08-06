@@ -12,139 +12,6 @@ from helper_functions import HelperFunctions
 
 SampleOverview_dir = r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\Sample Overview.xlsx"
 
-# class HelperFunctions():
-#
-#     def nm_to_ev(self, input):
-#         """
-#         Convert energy to wavelength and vice versa.
-#
-#         Args:
-#             input (array/float): wavelength [m] or energy [eV]
-#
-#         Returns:
-#             array/float: wavelength [m] or energy [eV]
-#         """
-#         return  constants.h * constants.c / constants.e / input
-#
-#     def reformat_splnumber(self, splnumber):
-#         """
-#         Transform spl-number from format splXXXX to format XX-XX.
-#
-#         Args:
-#             splnumber (str): spl-number in format splXXXX
-#
-#         Returns:
-#             str: spl-number in format XX-XX
-#         """
-#         x1, x2 = splnumber[3:5], splnumber[5:]
-#         return x1 + "-" + x2
-#
-#     def get_spl_from_epi(file_path, epinumber):
-#         """
-#         Get spl-number from Epi-number.
-#
-#         Args:
-#             file_path (str): Path to the Excel file
-#             epinumber (str): Substring to search for in growth column
-#             -> format: epiXXXX
-#
-#         Returns:
-#             str: spl-number
-#         """
-#         header_text = "Growth"
-#         df = pd.read_excel(SampleOverview_dir)
-#
-#         row_epi = None # Find row of passed epi number by looking for epinumber in column
-#
-#         for idx, value in df[header_text].items():
-#             if epinumber in str(value):
-#                 row_epi = idx
-#                 break
-#
-#         if row_epi is None:
-#             print("Epi number not found.")
-#             return None  # Epi number not found in column B
-#
-#         return df.iloc[row_epi, 0]
-#
-#
-#     def get_epi_from_spl(self, splnumber):
-#         """
-#         Get Epi-number from spl-number.
-#
-#         Args:
-#             file_path (str): Path to the Excel file
-#             splnumber (str): Substring to search for in growth or
-#             -> format: splXXXX
-#
-#         Returns:
-#             Epi-number
-#         """
-#         splnumber_reformat = HelperFunctions().reformat_splnumber(splnumber)
-#
-#         header_text_growth, header_text_cleaved, header_text_transfer = "Growth", "Cleaved From", "NW Transfer"
-#         df = pd.read_excel(SampleOverview_dir)
-#
-#         row_epi = None
-#
-#         # Find row of passed spl-number by looking for splnumber_reformat in column "Name" of SampleOverview
-#         for idx, value in df["Name"].items():
-#             if splnumber_reformat in str(value):
-#                 row_epi = idx
-#                 break
-#
-#         if row_epi == None:
-#             print("Sample not found")
-#             return
-#
-#         if not pd.isna(df[header_text_growth][idx]): # If growth column contains value, extract epi number from there
-#             return df[header_text_growth][idx].split("-")[1].strip() # Get value from cell, extract substring after "-" and strip potential spaces
-#
-#         # Can either contain transfer from sample or transfer to sample. Only in first case, which is the relevant one, there is the substring "Epi" contained in the cell
-#         elif not pd.isna(df[header_text_transfer][idx]) and "Epi" in df[header_text_transfer][idx]:
-#             return "epi" + df[header_text_transfer][idx].split("-")[1][:4] # Get first three chars after "-" (number) and add it to "epi"
-#
-#         elif not pd.isna(df[header_text_cleaved][idx]):
-#             # The "Cleaved From" column, again contains the spl-number of the sample, from which was cleaved.
-#             # Recursively repeat task with this spl-number
-#             return self.get_epi_from_spl(df[header_text_cleaved][idx])
-#
-#
-#     def get_info_from_filepath(self, filepath):
-#         """
-#         Get spl-number, Epi-number and NW-number from filepath.
-#
-#         Args:
-#             file_path (str): Path to the Excel file
-#
-#         Returns:
-#             (tuple): spl-number (str), Epi-number (str), NW-number (list of strings)
-#         """
-#         filename = filepath.split("\\")[-1]
-#         filename_split = filename.split("_")
-#
-#         splnumber, epinumber, nwnumber = None, None, None
-#
-#         for name in filename_split:
-#             if "spl" in name:
-#                 splnumber = name
-#             if "Epi" in name:
-#                 epinumber = name
-#             if "NW" in name:
-#                 nwnumber = name
-#
-#         if splnumber == None:
-#             splnumber = input("No spl-number found. Please specify:")
-#
-#         if epinumber == None:
-#             epinumber = self.get_epi_from_spl(splnumber)
-#
-#         if nwnumber == None:
-#             nwnumber = input("No spl-number found. Please specify:")
-#
-#         return splnumber, epinumber, nwnumber
-
-
 class DataHandler():
 
     def load_origin(self, filepath):
@@ -448,10 +315,10 @@ y = np.sin(x)
 
 x = np.array([-1.98, -1.74, -1.51, -1.27, -1.04, -0.80, -0.57, -0.33, -0.10, 0.14, 0.37, 0.61, 0.84, 1.08, 1.31, 1.55, 1.78, 2.02, 2.25, 2.49, 2.72, 2.96, 3.19, 3.43, 3.66, 3.90, 4.13, 4.37, 4.60, 4.84, 5.07, 5.31, 5.54, 5.78, 6.01, 6.25, 6.48, 6.72, 6.95, 7.19, 7.42, 7.66, 7.89, 8.13, 8.36, 8.60, 8.83, 9.07, 9.30, 9.54])
 y = np.array([6.2, 4.8, 9.1, 4.2, 7.6, 3.9, 5.9, 8.4, 3.3, 7.1, 4.1, 6.8, 2.8, 5.6, 7.9, 3.6, 5.7, 2.3, 6.3, 8.0, 4.2, 12.5, 7.1, 15.3, 26.8, 42.5, 65.3, 78.9, 89.2, 82.7, 91.5, 75.9, 58.4, 42.1, 31.6, 26.8, 19.5, 15.2, 12.7, 10.4, 9.9, 11.2, 7.5, 12.1, 8.2, 10.7, 6.8, 9.0, 11.4, 7.3])
-# fit = Fitter(FitFunctions().gaussian, x, y, fitrange=SpanSelector().select_x_span, p0=InitialGuessGenerator().create_initial_guess_single_peak)
-#
-# print(fit.opt)
+fit = Fitter(FitFunctions().gaussian, x, y, fitrange=SpanSelector().select_x_span, p0=InitialGuessGenerator().create_initial_guess_single_peak)
 
-plt.plot(x, y)
-plt.plot(x, FitFunctions().gaussian(x, *[82.67009058,  4.84584268,  0.71605576,  8.97632381]))
-plt.show()
+print(fit.opt)
+
+# plt.plot(x, y)
+# plt.plot(x, FitFunctions().gaussian(x, *[82.67009058,  4.84584268,  0.71605576,  8.97632381]))
+# plt.show()
