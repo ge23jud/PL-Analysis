@@ -18,10 +18,10 @@ class HelperFunctions():
         Convert energy to wavelength and vice versa.
 
         Args:
-            input (float/array): wavelength [m] or energy [eV]
+            input (array/float): wavelength [m] or energy [eV]
 
         Returns:
-            wavelength [m] (float/array) or energy [eV] (float/array)
+            array/float: wavelength [m] or energy [eV]
         """
         return  constants.h * constants.c / constants.e / input
 
@@ -33,7 +33,7 @@ class HelperFunctions():
             splnumber (str): spl-number in format splXXXX
 
         Returns:
-            spl-number (str) in format XX-XX
+            str: spl-number in format XX-XX
         """
         x1, x2 = splnumber[3:5], splnumber[5:]
         return x1 + "-" + x2
@@ -48,7 +48,7 @@ class HelperFunctions():
             -> format: epiXXXX
 
         Returns:
-            spl-number
+            str: spl-number
         """
         header_text = "Growth"
         df = pd.read_excel(SampleOverview_dir)
@@ -253,64 +253,97 @@ class Spectrum(Measurement):
 
 class FitFunctions():
 
-    def gaussian(x, a, x0, sigma, offset):
+    def gaussian(self, x, a, x0, sigma, offset):
         return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2)) + offset
 
 
-class Fitter():
+class InitialGuessGenerator():
 
-    def __init__(self, f, xdata, ydata, p0=None, errors=None, startidx=None, stopidx=None, suppress_spanselector=False):
-        """
-        Parameters:
-        xdata (np-array of floats): xdata to fit
-        ydata (np-array of floats): ydata to fit
-        p0 (tuple of floats): initial guess for parameters
-        errors (np-array of floats): y-errors of fit data
-        startidx (int): first index of fit range
-        stopidx (int): last index of fit range
-        suppress_spanselector (bool): if False, overwrite startidx and stopidx by selecting fit range in plot
-
-        Returns:
-        (tuple): (a (float), x0 (float), sigma (float), offset (float))
-        """
-        self.X, self.Y = xdata, ydata
-        if startidx != None:
-            self.X_fit, self.Y_fit = self.X[startidx:], self.Y[startidx:]
-        if stopidx != None:
-            self.X_fit, self.Y_fit = self.X_fit[:stopidx], self.Y_fit[:stopidx]
-
-        self.startidx, self.stopidx = startidx, stopidx
-
-        # self.initial_guess = self.create_initial_guess_single_peak(self.X_fit, self.Y_fit)
-
-    def create_initial_guess_single_peak(self, xdata_fit, ydata_fit):
+    def create_initial_guess_single_peak(self, xdata, ydata):
         """
         Create an initial guess for a single peak fit.
 
-        Parameters:
-        xdata_fit (np-array of floats): xdata to fit
-        ydata_fit (np-array of floats): ydata to fit
-
         Returns:
-        (tuple): (a (float), x0 (float), sigma (float), offset (float))
+        tuple: (a, x0 , sigma , offset) -> Initial guesses for amplitude, peak position, peak width and offset
         """
         # Approximate amplitude based on maximum value within fit range
-        a_idx = np.argmax(ydata_fit)
-        a = ydata_fit[a_idx]
+        a_idx = np.argmax(ydata)
+        a = ydata[a_idx]
 
         # Approximate peak position based on x-value of maximum value within fit range
-        x0 = xdata_fit[a_idx]
+        x0 = xdata[a_idx]
 
         # Approximate FWHM based on position of value which first exceeds half of maximum value when iteration over values
-        for x, y in zip(xdata_fit, ydata_fit):
-            if y >= a/2:
-                sigma = (x0-x) / np.sqrt(2*np.log(2)) # FWHM = 2 * (x0-x); sigma = FWHM/(2*sqrt(2*ln2))
+        for x, y in zip(xdata, ydata):
+            if y >= a / 2:
+                sigma = (x0 - x) / np.sqrt(2 * np.log(2))  # FWHM = 2 * (x0-x); sigma = FWHM/(2*sqrt(2*ln2))
                 break
 
         # Approximate offset based on average of first and last value of fit range
-        offset = 0.5 * (ydata_fit[0] + ydata_fit[-1])
+        offset = 0.5 * (ydata[0] + ydata[-1])
 
         return a, x0, sigma, offset
+
+class Fitter():
+
+    def __init__(self, f, xdata, ydata, p0=None, error=None, fitrange=[None, None]):
+        """
+        Tool for simple fits to experimental data
+
+        Parameters:
+        f (func): Fit function which takes p+1 arguments (1 independent variable, p parameters)
+        xdata (array (n)): x-values of data
+        ydata (array (n)): y-values of data
+        * p0: initial guess for parameters / default: None
+            - tuple (p): Direct specification of initial guesses
+            - func: Function to autogenerate initial guesses
+            - None: For running fit without initial guesses
+        * errors (array (n)): y-errors of data
+        * fitrange: Range of x-data to use for fit / default: [None, None]
+            - list (2): Boundary indices of fit range; If None, no boundary is set
+            - func: Function that returns boundary indices, e.g. by span selection
+
+        Returns:
+        ?
+        """
+        self.f = f
+        self.X, self.Y, self.error = xdata, ydata, error
+        if callable(fitrange):
+            self.fitrange = fitrange(self.X, self.Y)
+        else:
+            self.fitrange = fitrange
+        self.X_fit, self.Y_fit = self.X[self.fitrange[0]:self.fitrange[1]], self.Y[self.fitrange[0]:self.fitrange[1]]
+        if self.error is not None:
+            self.error_fit = self.error[fitrange[0]:fitrange[1]]
+        else:
+            self.error_fit = self.error
+
+        if callable(p0):
+            self.p0 = p0(self.X_fit, self.Y_fit)
+        else:
+            self.p0 = p0
+
+        self.opt, self.cov = self.fit()
+
+    # def set_fitrange(self, fitrange):
+    #     """
+    #     Change self.X_fit, self.Y_fita and self.error_fit.
+    #
+    #     Parameters:
+    #     Returns:
+    #     tuple: (a, x0 , sigma , offset) -> Initial guesses for amplitude, peak position, peak width and offset
+    #     """
+
+    def fit(self):
+        """
+        Perform scipy.curve_fit on self.X_fit and self.Y_fit.
+
+        Returns:
+        tuple (p), array (p, p): optimized fit parameters, covariance matrix
+        """
+        opt, cov = curve_fit(self.f, self.X_fit, self.Y_fit, self.p0, self.error_fit)
+        return opt, cov
+
 
 
 # Taken from Claude, might need optimization at some point
@@ -408,7 +441,16 @@ class SpanSelector():
 
 x = np.linspace(0, 100, 1000)
 y = np.sin(x)
+#
+# fit = SpanSelector()
+# fit.select_x_span(x, y)
 
-fit = SpanSelector()
-fit.select_x_span(x, y)
+x = np.array([-1.98, -1.74, -1.51, -1.27, -1.04, -0.80, -0.57, -0.33, -0.10, 0.14, 0.37, 0.61, 0.84, 1.08, 1.31, 1.55, 1.78, 2.02, 2.25, 2.49, 2.72, 2.96, 3.19, 3.43, 3.66, 3.90, 4.13, 4.37, 4.60, 4.84, 5.07, 5.31, 5.54, 5.78, 6.01, 6.25, 6.48, 6.72, 6.95, 7.19, 7.42, 7.66, 7.89, 8.13, 8.36, 8.60, 8.83, 9.07, 9.30, 9.54])
+y = np.array([6.2, 4.8, 9.1, 4.2, 7.6, 3.9, 5.9, 8.4, 3.3, 7.1, 4.1, 6.8, 2.8, 5.6, 7.9, 3.6, 5.7, 2.3, 6.3, 8.0, 4.2, 12.5, 7.1, 15.3, 26.8, 42.5, 65.3, 78.9, 89.2, 82.7, 91.5, 75.9, 58.4, 42.1, 31.6, 26.8, 19.5, 15.2, 12.7, 10.4, 9.9, 11.2, 7.5, 12.1, 8.2, 10.7, 6.8, 9.0, 11.4, 7.3])
+# fit = Fitter(FitFunctions().gaussian, x, y, fitrange=SpanSelector().select_x_span, p0=InitialGuessGenerator().create_initial_guess_single_peak)
+#
+# print(fit.opt)
 
+plt.plot(x, y)
+plt.plot(x, FitFunctions().gaussian(x, *[82.67009058,  4.84584268,  0.71605576,  8.97632381]))
+plt.show()
