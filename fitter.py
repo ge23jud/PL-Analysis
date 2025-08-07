@@ -1,4 +1,6 @@
+import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from plot import Plot
 
 class Fitter():
 
@@ -40,15 +42,8 @@ class Fitter():
             self.p0 = p0
 
         self.opt, self.cov = self.fit()
+        self.plot()
 
-    # def set_fitrange(self, fitrange):
-    #     """
-    #     Change self.X_fit, self.Y_fita and self.error_fit.
-    #
-    #     Parameters:
-    #     Returns:
-    #     tuple: (a, x0 , sigma , offset) -> Initial guesses for amplitude, peak position, peak width and offset
-    #     """
 
     def fit(self):
         """
@@ -60,3 +55,10 @@ class Fitter():
         opt, cov = curve_fit(self.f, self.X_fit, self.Y_fit, self.p0, self.error_fit)
         return opt, cov
 
+
+    def plot(self):
+        fig, ax = plt.subplots(1, 1)
+        plotter = Plot()
+        plotter.add_curve(ax, self.X, self.Y)
+        plotter.add_curve(ax, self.X, self.f(self.X, *self.opt))
+        plt.show()
