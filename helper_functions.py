@@ -1,4 +1,5 @@
 from scipy import constants
+import pandas as pd
 
 SampleOverview_dir = r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\Sample Overview.xlsx"
 
@@ -130,6 +131,6 @@ class HelperFunctions():
             epinumber = self.get_epi_from_spl(splnumber)
 
         if nwnumber == None:
-            nwnumber = input("No spl-number found. Please specify:")
+            nwnumber = input("No NW-number found. Please specify:")
 
         return splnumber, epinumber, nwnumber
