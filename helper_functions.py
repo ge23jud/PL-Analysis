@@ -1,5 +1,7 @@
 from scipy import constants
 import pandas as pd
+import tkinter as tk
+from tkinter import filedialog
 
 SampleOverview_dir = r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\Sample Overview.xlsx"
 
@@ -134,3 +136,27 @@ class HelperFunctions():
             nwnumber = input("No NW-number found. Please specify:")
 
         return splnumber, epinumber, nwnumber
+
+    def select_files(self):
+        """
+        Opens a file dialog to select one or multiple files.
+        Returns a list of full paths of the selected files, or empty list if canceled.
+        """
+        root = tk.Tk()
+        root.withdraw()  # Hide the main tkinter window
+
+        file_paths = filedialog.askopenfilenames(
+            title="Select file(s) - Hold Ctrl/Cmd to select multiple",
+            filetypes=[
+                ("All files", "*.*"),
+                ("Text files", "*.txt"),
+                ("Python files", "*.py"),
+                ("CSV files", "*.csv"),
+                ("Origin files", "*.origin")
+            ]
+        )
+
+        root.destroy()
+        return list(file_paths) if file_paths else []
+
+
