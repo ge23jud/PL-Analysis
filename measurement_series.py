@@ -1,7 +1,7 @@
+from data_handler import DataHandler
 from helper_functions import HelperFunctions
 
 class MeasurementSeries():
-
     def __init__(self, data, filepath):
         """
         Series of m measurements with n_m data points, respectively. n_m can be different for every single measurement.
@@ -11,7 +11,8 @@ class MeasurementSeries():
         data (func): function to be used to load data. Returns
         filepath (str): Filepath of the file from which data is loaded
         """
-        self.info, self.X, self.Y = self.load()
+        # load is a separate method to allow to implement logic (different file types etc.) later without complicating constructor
+        self.info, self.X, self.Y = self.load(data, filepath)
 
 
     def load(self, data, filepath):
@@ -24,3 +25,4 @@ class MeasurementSeries():
         filepath (str): Filepath of the file from which data is loaded
         """
         return data(filepath)
+

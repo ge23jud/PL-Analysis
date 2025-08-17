@@ -133,9 +133,6 @@ class DataHandler():
             xdata[1:, i] = df[1:, 0].astype("float")
 
         ydata = df[1:, 1:]
-        print(ydata)
 
         return header_dict, xdata, ydata
 
-path = HelperFunctions().select_files()[0]
-DataHandler().load_series_origin(path)
