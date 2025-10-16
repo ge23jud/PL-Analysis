@@ -1,8 +1,9 @@
 import numpy as np
 from pandas import read_csv
+import os
 
-from helper_functions import HelperFunctions
-
+from fit_functions import FitFunctions
+from fitter import Fitter
 
 class DataHandler():
 
@@ -19,9 +20,9 @@ class DataHandler():
             - X: numpy array with Energy values (eV)
             - Y: numpy array with Powerspectrum values (Counts/time)
         """
-        print("Note: Center Wavelength is not included in measurement info due to missing colon in files. Ignore if already fixed")
 
-        with open(filepath, 'r', encoding='utf-8') as file:
+
+        with open(filepath, 'r', encoding='iso-8859-1') as file:
             lines = file.readlines()
 
         # Initialize variables
@@ -39,6 +40,8 @@ class DataHandler():
 
             if not line or line.startswith("(") or line.startswith("Energy"):
                 continue # Skip empty lines or line which contain units
+            elif line.startswith("Center wavelength"):
+                parts = line.split("\t") # Center wavelength
             else:
                 parts = line.split(':', 1)  # Split line at first colon
 
@@ -76,6 +79,11 @@ class DataHandler():
         return header_dict, X, Y
 
 
+    def load_origin_powercalibration(self, filepath):
+        header_dict, Y, X = self.load_origin(filepath)
+        return header_dict, X, Y
+
+
     def load_series_origin(self, filepath):
         """
         Load data series from a .origin file.
@@ -97,7 +105,7 @@ class DataHandler():
 
         header_dict = {}
         header_stop_idx = 9  # first line after header
-        data_start_idx = 14
+        data_start_idx = 13
 
         # Parse header information
         for i, line in enumerate(lines):
@@ -122,7 +130,7 @@ class DataHandler():
 
         df = read_csv(filepath, delimiter="\t", header=data_start_idx-2, encoding="unicode_escape")
 
-        n = df.shape[0] - 1
+        n = df.shape[0] - 2
         m = df.shape[1] - 1
         xdata = np.zeros((n+1, m))
         ydata = np.zeros((n, m))
@@ -130,9 +138,57 @@ class DataHandler():
         df = np.array(df)
         xdata[0, :] = df[0, 1:]
         for i in range(m):
-            xdata[1:, i] = df[1:, 0].astype("float")
+            xdata[1:, i] = df[2:, 0].astype("float")
 
-        ydata = df[1:, 1:]
+        ydata = df[2:, 1:]
 
         return header_dict, xdata, ydata
+
+
+    def find_dark(self, filepath, int_time, center_energy):
+        if filepath == r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\13_PL":
+            print("No dark spectrum found.")
+            return
+        items = os.listdir(filepath)
+        for x in items:
+            if "dark" in x or "Dark" in x:
+                fullpath = "\\".join((filepath, x))
+                if os.path.isfile(fullpath):
+                    if int_time in x and center_energy in x:
+                        return fullpath
+                elif os.path.isdir(fullpath):
+                    return self.find_dark(fullpath, int_time, center_energy)
+        return self.find_dark(os.path.dirname(filepath), int_time, center_energy)
+
+
+    def find_powercalibration(self, filepath):
+        if filepath == r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\13_PL":
+            print("No power calibration found.")
+            return
+        items = os.listdir(filepath)
+        for x in items:
+            if "calibration" in x.lower():
+                fullpath = "\\".join((filepath, x))
+                if os.path.isfile(fullpath):
+                    if "atbs" in x.lower():
+                        path_bs = fullpath
+                    elif "atsample" in x.lower():
+                        path_sample = fullpath
+                elif os.path.isdir(fullpath):
+                    return self.find_powercalibration(fullpath)
+        if path_bs == None or path_sample == None:
+            return self.find_powercalibration(os.path.dirname(filepath))
+        else:
+            return path_bs, path_sample
+
+
+    def linear_powercalibration(self, path_bs, path_sample):
+
+        p_bs = self.load_origin_powercalibration(path_bs)[2]
+        p_sample = self.load_origin_powercalibration(path_sample)[2]
+
+        f = FitFunctions().linear_wo_offset
+        fit_obj = Fitter(f, p_bs, p_sample, suppress_plot=True)
+
+        return fit_obj.opt
 

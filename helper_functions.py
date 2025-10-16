@@ -2,6 +2,8 @@ from scipy import constants
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
+from data_handler import DataHandler
+import re
 
 SampleOverview_dir = r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\Sample Overview.xlsx"
 
@@ -137,6 +139,24 @@ class HelperFunctions():
 
         return splnumber, epinumber, nwnumber
 
+    def get_inttime_centerenergy_from_filepath(self, filepath):
+
+        int_time, center_energy = None, None
+        filename = filepath.split("\\")[-1]
+        parts = filename.split("_")
+        for p in parts:
+            if "ev" in p.lower():
+                center_energy = p
+            if bool(re.match(r'^\d+\.?\d*s$', p)):
+                int_time = p
+
+        if int_time == None:
+            print("Integration time not found in filename")
+        if center_energy == None:
+            print("Center energy not found in filename")
+
+        return int_time, center_energy
+
     def select_files(self):
         """
         Opens a file dialog to select one or multiple files.
@@ -160,3 +180,36 @@ class HelperFunctions():
         return list(file_paths) if file_paths else []
 
 
+    def load_selector(self, filepath):
+
+        filepath_full = filepath
+        filepath = filepath.split("\\")
+        format = filepath[-1].split(".")[-1]
+
+
+        if format == "origin":
+
+            with open(filepath_full, 'r', encoding='iso-8859-1') as file:
+                lines = file.readlines()
+                meastype = lines[1].strip().split("\t")[1]
+
+            if meastype == "X vs Y/Power HWP position vs. Power":
+                return DataHandler().load_origin_powercalibration
+
+            elif meastype == "X vs Y/Power HWP position vs. Photoluminescence":
+                return DataHandler().load_series_origin
+
+            elif meastype == "Photoluminescence":
+                return DataHandler().load_origin
+
+
+    def convert_info_spectrum(self, key, value):
+
+        if key == "Date" or key == "Measurement type":
+            return value
+
+        elif key in ["Temperature", "Integration time", "Excitation power", "Entrance slit width", "Exit slit width"]:
+            return float(value.split(" ")[0])
+
+        elif key in ["Center wavelength", "Dispersion window"]:
+            return float(value.split("/")[1].strip().split(" ")[0])

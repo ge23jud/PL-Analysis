@@ -4,7 +4,7 @@ from plot import Plot
 
 class Fitter():
 
-    def __init__(self, f, xdata, ydata, p0=None, error=None, fitrange=[None, None]):
+    def __init__(self, f, xdata, ydata, p0=None, error=None, fitrange=[None, None], suppress_plot=False):
         """
         Tool for simple fits to experimental data
 
@@ -42,7 +42,9 @@ class Fitter():
             self.p0 = p0
 
         self.opt, self.cov = self.fit()
-        self.plot()
+
+        if not suppress_plot:
+            self.plot()
 
 
     def fit(self):
