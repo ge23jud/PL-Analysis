@@ -1,3 +1,4 @@
+import numpy as np
 from scipy import constants
 import pandas as pd
 import tkinter as tk
@@ -213,3 +214,14 @@ class HelperFunctions():
 
         elif key in ["Center wavelength", "Dispersion window"]:
             return float(value.split("/")[1].strip().split(" ")[0])
+
+
+    def find_closest_index(self, array, value):
+
+        closest_index = np.argmin(np.abs(array - value))
+
+        return closest_index
+
+
+    def FWHM_from_sigma(self, sigma):
+        return 2*np.sqrt(2*np.log(2)) * sigma

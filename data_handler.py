@@ -188,7 +188,8 @@ class DataHandler():
         p_sample = self.load_origin_powercalibration(path_sample)[2]
 
         f = FitFunctions().linear_wo_offset
-        fit_obj = Fitter(f, p_bs, p_sample, suppress_plot=True)
+        fit_obj = Fitter(f, p_bs, p_sample)
+        fit_obj.fit(suppress_plot=True)
 
         return fit_obj.opt
 

@@ -3,8 +3,12 @@ import numpy as np
 class FitFunctions():
 
 
-    def gaussian(self, x, a, x0, sigma, offset):
+    def single_gaussian_const_bg(self, x, a, x0, sigma, offset):
         return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2)) + offset
+
+
+    def single_gaussian_linear_bg(self, x, a, x0, sigma, m, t):
+        return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2)) + m * x + t
 
 
     def linear(self, x, a, b):

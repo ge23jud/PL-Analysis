@@ -15,15 +15,16 @@ class Interactor():
         ydata : array-like
             Y coordinates of the data
         """
+        self.xdata = np.array(xdata)
+        self.ydata = np.array(ydata)
         self.fig, self.ax = plt.subplots(figsize=(10, 6))
-        self.data_line, = self.ax.plot(xdata, ydata, 'b-', linewidth=2, label='Data')
+        self.data_line, = self.ax.plot(self.xdata, self.ydata, 'b-', linewidth=2, label='Data')
         self.ax.set_xlabel('X')
         self.ax.set_ylabel('Y')
         self.ax.legend()
         self.ax.grid(True, alpha=0.3)
         plt.show(block=False)
         plt.pause(1)  # Give window time to render
-
 
     def change_plot(self, xdata, ydata):
         """
@@ -36,12 +37,31 @@ class Interactor():
         ydata : array-like
             New Y coordinates
         """
-        self.data_line.set_xdata(xdata)
-        self.data_line.set_ydata(ydata)
+        self.xdata = np.array(xdata)
+        self.ydata = np.array(ydata)
+        self.data_line.set_xdata(self.xdata)
+        self.data_line.set_ydata(self.ydata)
         self.ax.relim()
         self.ax.autoscale_view()
         self.fig.canvas.draw_idle()
         plt.pause(1)
+
+    def set_limits(self, xlim=None, ylim=None):
+        """
+        Set the axis limits of the plot.
+
+        Parameters
+        ----------
+        xlim : tuple or None, optional
+            Tuple of (xmin, xmax) for x-axis limits. If None, x-limits are unchanged.
+        ylim : tuple or None, optional
+            Tuple of (ymin, ymax) for y-axis limits. If None, y-limits are unchanged.
+        """
+        if xlim is not None:
+            self.ax.set_xlim(xlim)
+        if ylim is not None:
+            self.ax.set_ylim(ylim)
+        self.fig.canvas.draw_idle()
 
 
     def kill(self):
@@ -165,85 +185,107 @@ class Interactor():
 
         return np.array(sorted(selected_x))
 
-
-    def select_x_span(self, xdata, ydata, title="Select X-Span"):
+    def select_x_span(self, title="Select X-Span"):
         """
-        Plot x,y data and allow interactive selection of x-span.
+        Allow user to select an x-span by clicking and dragging on the existing plot.
 
-        Parameters:
-        xdata (np-array)
-        ydata (np-array)
-        title (str): Text to display on the prompt
+        Parameters
+        ----------
+        title : str
+            Title for the plot
 
-        Returns:
-        tuple : (start_idx, end_idx) First and last indices of x-data within selected range
+        Returns
+        -------
+        tuple
+            (start_idx, end_idx) First and last indices of x-data within selected range,
+            or (None, None) if no selection was made
+
+        Usage
+        -----
+        - Click and drag to select a range
+        - Press Enter to confirm selection
         """
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(xdata, ydata, 'b-', linewidth=1)
-        ax.set_title(f"{title}\nClick and drag to select range, then press Enter or close plot")
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.grid(True, alpha=0.3)
-
-        # Variables to store selection
+        # Local state variables
         selection = {'x1': None, 'x2': None, 'active': False}
-        span_line = None
+        span_line = [None]  # Use list for mutable reference
+        legend_obj = [None]
+        finished = [False]
 
+        # Update title
+        original_title = self.ax.get_title()
+        self.ax.set_title(f'{title}\nClick and drag to select range | Enter to confirm')
+        self.fig.canvas.draw_idle()
+
+        # Local event handler functions
         def on_press(event):
-            if event.inaxes == ax and event.button == 1:  # Left mouse button
+            """Handle mouse press events."""
+            if event.inaxes == self.ax and event.button == 1:  # Left mouse button
                 selection['x1'] = event.xdata
                 selection['active'] = True
 
         def on_motion(event):
-            nonlocal span_line
-            if selection['active'] and event.inaxes == ax:
+            """Handle mouse motion for dragging."""
+            if selection['active'] and event.inaxes == self.ax:
                 selection['x2'] = event.xdata
 
                 # Remove previous span visualization
-                if span_line is not None:
-                    span_line.remove()
+                if span_line[0] is not None:
+                    span_line[0].remove()
+                if legend_obj[0] is not None:
+                    legend_obj[0].remove()
 
                 # Draw current selection
                 x1, x2 = sorted([selection['x1'], selection['x2']])
-                span_line = ax.axvspan(x1, x2, alpha=0.3, color='red',
-                                       label=f'Selected: [{x1:.3f}, {x2:.3f}]')
-                ax.legend()
-                fig.canvas.draw()
+                span_line[0] = self.ax.axvspan(x1, x2, alpha=0.3, color='red',
+                                               label=f'Selected: [{x1:.3f}, {x2:.3f}]')
+                legend_obj[0] = self.ax.legend()
+                self.fig.canvas.draw_idle()
 
         def on_release(event):
-            if selection['active'] and event.inaxes == ax:
+            """Handle mouse button release."""
+            if selection['active'] and event.inaxes == self.ax:
                 selection['x2'] = event.xdata
                 selection['active'] = False
 
         def on_key(event):
+            """Handle key press events."""
             if event.key == 'enter':
-                plt.close(fig)
+                finished[0] = True
 
         # Connect event handlers
-        fig.canvas.mpl_connect('button_press_event', on_press)
-        fig.canvas.mpl_connect('motion_notify_event', on_motion)
-        fig.canvas.mpl_connect('button_release_event', on_release)
-        fig.canvas.mpl_connect('key_press_event', on_key)
+        cid_press = self.fig.canvas.mpl_connect('button_press_event', on_press)
+        cid_motion = self.fig.canvas.mpl_connect('motion_notify_event', on_motion)
+        cid_release = self.fig.canvas.mpl_connect('button_release_event', on_release)
+        cid_key = self.fig.canvas.mpl_connect('key_press_event', on_key)
 
-        plt.show()
+        # Wait for user to press Enter or close window
+        while not finished[0] and plt.fignum_exists(self.fig.number):
+            plt.pause(0.1)
+
+        # Disconnect event handlers
+        self.fig.canvas.mpl_disconnect(cid_press)
+        self.fig.canvas.mpl_disconnect(cid_motion)
+        self.fig.canvas.mpl_disconnect(cid_release)
+        self.fig.canvas.mpl_disconnect(cid_key)
+
+        # Remove the span visualization
+        if span_line[0] is not None:
+            span_line[0].remove()
+        if legend_obj[0] is not None:
+            legend_obj[0].remove()
+
+        # Restore original legend
+        self.ax.legend()
+
+        # Reset title
+        self.ax.set_title(original_title)
+        self.fig.canvas.draw_idle()
 
         # Process selection
         if selection['x1'] is not None and selection['x2'] is not None:
             x_min, x_max = sorted([selection['x1'], selection['x2']])
 
-            # Find indices
-            start_idx = np.argmax(xdata >= x_min)
-            end_idx = len(xdata) - 1 - np.argmax(xdata[::-1] <= x_max)
-
-            print(f"Selected range: [{x_min:.3f}, {x_max:.3f}]")
-            print(f"Indices: [{start_idx}, {end_idx}]")
-            print(f"Data points in range: {end_idx - start_idx + 1}")
-
-            return start_idx, end_idx
+            return x_min, x_max
         else:
             print("No selection made")
             return None, None
-
-
-    def select_peaks(self, xdata, ydata):
-        pass

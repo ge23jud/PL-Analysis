@@ -2,9 +2,12 @@ import os.path
 from hmac import digest_size
 from plistlib import loads
 import matplotlib.pyplot as plt
+import numpy as np
 
 from data_handler import DataHandler
+from fitter import Fitter
 from helper_functions import HelperFunctions
+from interactor import Interactor
 
 
 class Measurement():
@@ -191,3 +194,62 @@ class PowerSeries(MeasurementSeries):
         ax.set_yscale("log")
         plt.show()
 
+
+    def select_fit_intervals(self):
+        x = self.energy[:, -1]
+        y = self.intensity[:, -1]
+        window = Interactor(x, y)
+        pos = window.select_x_values(title="Select peaks")
+        npeaks = len(pos)
+        intervals = np.zeros((npeaks, 2))
+        for i, p in enumerate(pos):
+            xmin = p - 0.03
+            xmax = p + 0.03
+            window.set_limits(xlim=(xmin, xmax))
+            intervals[i, :] = window.select_x_span()
+        return intervals
+
+
+    def fit_peaks(self, intervals, fit_function, initial_guess_function):
+
+        self.fit_function = fit_function
+        self.initial_guess_function = initial_guess_function
+
+        # Determine shape of arrays
+        npeaks = intervals.shape[0]
+        npowers = len(self.power_bs)
+
+        # Create arrays containing all fit information
+        self.fit_intervals = np.zeros((npowers, npeaks, 2))
+        self.peakpos = np.zeros((npowers, npeaks))
+        self.peakpos_err = np.zeros((npowers, npeaks))
+        self.peakarea = np.zeros((npowers, npeaks))
+        self.peakarea_err = np.zeros((npowers, npeaks))
+        self.FWHM = np.zeros((npowers, npeaks))
+        self.FHWM_err = np.zeros((npowers, npeaks))
+
+        #
+        fitter = Fitter(xdata=self.energy[-1, :], ydata=self.intensity[-1, :], )
+        self.fit_intervals[-1, :, :] = intervals
+        for i in range(npowers-1, -1, -1):
+            for j in range(npeaks):
+                x, y = self.energy[i, :], self.intensity[i, :]
+                print(x)
+                p0 = initial_guess_function(x, y)
+                fitrange = np.zeros(2)
+                fitrange[0] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 0])
+                fitrange[1] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 1])
+                print(fitrange)
+                fitter.set_all(self.fit_function, x, y, None, p0, fitrange)
+                opt, cov = fitter.fit(suppress_plot=False)
+                error = np.sqrt(np.diag(cov))
+
+                self.peakpos[i, j] = opt[1]
+                self.peakpos_err[i, j] = error[1]
+
+                self.FWHM = HelperFunctions().FWHM_from_sigma(opt[2])
+                self.FWHM_err = HelperFunctions().FWHM_from_sigma(error[2])
+
+                if i != 0:
+                    self.fit_intervals[i-1, j, 0] = opt[1] - 2.5*opt[2]
+                    self.fit_intervals[i-1, j, 1] = opt[1] + 2.5 * opt[2]
