@@ -23,7 +23,7 @@ class Measurement():
             self.spl, self.epi, self.nw = HelperFunctions().get_info_from_filepath(filepath)
 
         self.info, self.X, self.Y = self.load(data, self.filepath)
-
+        self.X, self.Y = np.flip(self.X), np.flip(self.Y)
 
     def display(self):
         print("location: ", self.filepath)
@@ -134,6 +134,7 @@ class MeasurementSeries():
         self.filepath = filepath
         self.filename = filepath.split("\\")[-1]
         self.info, self.X, self.Y = self.load(data, filepath)
+        self.X, self.Y = np.flip(self.X, axis=0), np.flip(self.Y, axis=0)
         if "spl" in self.filename.lower():
             self.spl, self.epi, self.nw = HelperFunctions().get_info_from_filepath(filepath)
 
@@ -236,8 +237,8 @@ class PowerSeries(MeasurementSeries):
                 x, y = self.energy[:, i], self.intensity[:, i]
                 p0 = initial_guess_function(x, y)
                 fitrange = np.zeros(2, dtype=int)
-                fitrange[0] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 0])
-                fitrange[1] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 1])
+                fitrange[1] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 0])
+                fitrange[0] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 1])
                 fitter.set_all(self.fit_function, x, y, None, p0, fitrange)
                 opt, cov = fitter.fit(suppress_plot=False)
                 error = np.sqrt(np.diag(cov))

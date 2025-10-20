@@ -22,12 +22,12 @@ path = r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\
 
 spec = PowerSeries(DataHandler().load_series_origin, path)
 
-intervals = spec.select_fit_intervals()
-
-f = FitFunctions().single_gaussian_linear_bg
-p0 = InitialGuessGenerator().single_gaussian_linear_bg
-
-spec.fit_peaks(intervals, f, p0)
+# intervals = spec.select_fit_intervals()
+#
+# f = FitFunctions().single_gaussian_linear_bg
+# p0 = InitialGuessGenerator().single_gaussian_linear_bg
+#
+# spec.fit_peaks(intervals, f, p0)
 ## To do ##
 
 # Implement MeasurementSeries()
