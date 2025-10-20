@@ -162,8 +162,8 @@ class PowerSeries(MeasurementSeries):
 
     def __init__(self, data, filepath):
         super().__init__(data, filepath)
-        self.power_bs = self.X[0, :]
-        self.energy = self.X[1:, :]
+        self.power_bs = self.X[-1, :]
+        self.energy = self.X[:-1, :]
         self.intensity_raw = self.Y
         self.wavelength = HelperFunctions().nm_to_ev(self.energy)
 
@@ -237,8 +237,8 @@ class PowerSeries(MeasurementSeries):
                 x, y = self.energy[:, i], self.intensity[:, i]
                 p0 = initial_guess_function(x, y)
                 fitrange = np.zeros(2, dtype=int)
-                fitrange[1] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 0])
-                fitrange[0] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 1])
+                fitrange[0] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 0])
+                fitrange[1] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 1])
                 fitter.set_all(self.fit_function, x, y, None, p0, fitrange)
                 opt, cov = fitter.fit(suppress_plot=False)
                 error = np.sqrt(np.diag(cov))

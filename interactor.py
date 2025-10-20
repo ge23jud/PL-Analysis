@@ -17,6 +17,7 @@ class Interactor():
         """
         self.xdata = np.array(xdata)
         self.ydata = np.array(ydata)
+        print(self.xdata, self.ydata)
         self.fig, self.ax = plt.subplots(figsize=(10, 6))
         self.data_line, = self.ax.plot(self.xdata, self.ydata, 'b-', linewidth=2, label='Data')
         self.ax.set_xlabel('X')
