@@ -40,7 +40,7 @@ class Fitter():
 
     def set_fitrange(self, fitrange):
         self.fitrange = fitrange
-        #print(self.X)
+        print(self.fitrange)
         self.X_fit, self.Y_fit = self.X[self.fitrange[0]:self.fitrange[1]], self.Y[self.fitrange[0]:self.fitrange[1]]
         if self.error is not None:
             self.error_fit = self.error[fitrange[0]:fitrange[1]]

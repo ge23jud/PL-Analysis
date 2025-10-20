@@ -233,13 +233,11 @@ class PowerSeries(MeasurementSeries):
         self.fit_intervals[-1, :, :] = intervals
         for i in range(npowers-1, -1, -1):
             for j in range(npeaks):
-                x, y = self.energy[i, :], self.intensity[i, :]
-                print(x)
+                x, y = self.energy[:, i], self.intensity[:, i]
                 p0 = initial_guess_function(x, y)
-                fitrange = np.zeros(2)
+                fitrange = np.zeros(2, dtype=int)
                 fitrange[0] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 0])
                 fitrange[1] = HelperFunctions().find_closest_index(x, self.fit_intervals[i, j, 1])
-                print(fitrange)
                 fitter.set_all(self.fit_function, x, y, None, p0, fitrange)
                 opt, cov = fitter.fit(suppress_plot=False)
                 error = np.sqrt(np.diag(cov))

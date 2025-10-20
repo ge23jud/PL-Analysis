@@ -23,7 +23,7 @@ path = r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\
 spec = PowerSeries(DataHandler().load_series_origin, path)
 
 intervals = spec.select_fit_intervals()
-print(intervals)
+
 f = FitFunctions().single_gaussian_linear_bg
 p0 = InitialGuessGenerator().single_gaussian_linear_bg
 

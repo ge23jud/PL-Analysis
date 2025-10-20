@@ -218,7 +218,7 @@ class HelperFunctions():
 
     def find_closest_index(self, array, value):
 
-        closest_index = np.argmin(np.abs(array - value))
+        closest_index = int(np.argmin(np.abs(array - value)))
 
         return closest_index
 
