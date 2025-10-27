@@ -38,3 +38,8 @@ spec.fit_peaks(intervals, f, p0)
 # Str+N: Class search
 # Str+Shift+F: Everywhere search
 # Str+Shift+A: Everything search
+
+#Shortcuts to change
+# Move line down to Alt + Downarrow
+# Copy line down to Shift+Alt+Downarrow
+# Switch Strg+Enter and Str+Shift+Enter
